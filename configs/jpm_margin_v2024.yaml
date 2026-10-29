@@ -1,0 +1,71 @@
+# JPM Margin Policy v2024 规则参数。
+# 费率与阈值比率一律用百分数表示：12.5 即 12.5%。
+# 规则变更只改本文件，不改代码。
+
+version: "jpm_margin_v2024"
+
+# Section A a)：按组合总市值（GMV）分层计收
+initial_requirement:
+  part_a:
+    first_tier_gmv_limit: 1000000000   # 第一档上限
+    first_tier_rate_percent: 12.5      # 第一档以内费率
+    excess_rate_percent: 35            # 超出第一档部分费率
+  part_b:
+    ratio_lower_limit: 0.95            # 多空比率下界
+    ratio_upper_limit: 1.05            # 多空比率上界
+    rate_percent: 20                   # 比率超出区间时对 |净敞口| 的费率
+
+# 单一国家集中度：|净敞口| 超过"阈值比例 × GMV"的增量部分计收
+single_country:
+  "Tier 1":
+    threshold_rate_percent: 10
+    charge_rate_percent: 10
+  "Tier 2":
+    threshold_rate_percent: 5
+    charge_rate_percent: 10
+  "Tier 3":
+    threshold_rate_percent: 5
+    charge_rate_percent: 15
+  "Tier 4":
+    threshold_rate_percent: 2.5
+    charge_rate_percent: 15
+
+# 国家等级对应保证金：按发行人总市值全额计收；Tier 1 不计收
+aggregate_country:
+  "Tier 2":
+    rate_percent: 2.5
+  "Tier 3":
+    lcl_rate_percent: 10              # Large Cap, Liquid 费率
+    non_lcl_rate_percent: 15
+  "Tier 4":
+    lcl_rate_percent: 15
+    non_lcl_rate_percent: 20
+  # 通过指数持有的发行人无价格数据，仅按市值判定 LCL
+  lcl_market_cap: 10000000000
+
+# 流动性要求：按持有天数分档，对"超过档位下限天数"的市值部分计收
+liquidity:
+  buckets:
+    - {lower_days: 0.2, upper_days: 1, rate_percent: 15}
+    - {lower_days: 1, upper_days: 2, rate_percent: 35}
+    - {lower_days: 2, upper_days: 3, rate_percent: 50}
+
+# 行业要求：单一 GICS 行业 |净敞口| 超过"阈值比例 × GMV"时，对增量部分计收
+sector:
+  threshold_rate_percent: 15
+  charge_rate_percent: 15
+
+# Portfolio Conditions：发行人敞口超过等级阈值比例时，对增量部分计收
+portfolio_conditions:
+  grades:
+    "High Grade":
+      threshold_rate_percent: 2
+    "Medium Grade":
+      threshold_rate_percent: 1.5
+    "Low Grade":
+      threshold_rate_percent: 0.8
+  charge_rate_percent: 100              # 增量部分全额计收
+  # 通过指数持有的发行人无价格数据，仅按市值判定等级
+  grade_market_caps:
+    high: 10000000000
+    medium: 3000000000
