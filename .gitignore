@@ -1,0 +1,19 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# macOS 系统文件
+.DS_Store
+
+# Jupyter 临时文件
+.ipynb_checkpoints/
+
+# 程序生成的文件（每次运行都会重新生成）
+output/
+report.tex
+report.pdf
+report.aux
+report.log
+
+# 原始数据导出（由 yfinance 脚本生成，不入库）
+程序直接导出的数据/
