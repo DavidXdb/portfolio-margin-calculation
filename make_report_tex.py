@@ -2,7 +2,7 @@
 
 # 报告生成脚本：运行后生成 report.tex，再用 pdflatex 编译成 PDF。
 
-def write_report_tex(positions, long_total, short_total, net_exposure, gross_market_value, long_short_ratio, largest_sector, sector_share, largest_country, country_share, tier1_share, tier2_share, lcl_share, liquid_share, initial_requirement_part_a, initial_requirement_part_b, country_nmv, country_threshold_amounts, country_requirements, single_country_requirement, aggregate_country_requirement, liquidity_requirement, sector_nmv, sector_requirements, sector_requirement, section_a, issuer_exposure, largest_short_stress, stress_losses, top_5_requirement, base_margin_requirement, portfolio_conditions_requirement, total_margin_requirement):
+def write_report_tex(positions, long_total, short_total, net_exposure, gross_market_value, long_short_ratio, largest_sector, sector_share, largest_country, country_share, tier1_share, tier2_share, lcl_share, liquid_share, initial_requirement_part_a, initial_requirement_part_b, country_nmv, country_threshold_amounts, country_requirements, single_country_requirement, aggregate_country_requirement, liquidity_requirement, sector_nmv, sector_requirements, sector_threshold_amount, sector_requirement, section_a, issuer_exposure, largest_short_stress, stress_losses, top_5_requirement, base_margin_requirement, portfolio_conditions_requirement, total_margin_requirement):
     """接收组合数据，生成 LaTeX 报告文本并写出 report.tex。"""
 
     # 用列表逐行存放报告内容，最后一次性写入文件。
@@ -130,8 +130,9 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     # 每个国家输出三行（净敞口、阈值、要求），国家之间用 \addlinespace 留间距。
     for country, nmv in country_nmv.items():
         report_lines.append(rf"Portfolio NMV ({country}): & {nmv:,.2f} \\")
-        report_lines.append(rf"Portfolio GMV threshold ({country}): & {country_threshold_amounts[country]:,.2f} \\")
-        report_lines.append(rf"Margin requirement ({country}): & {country_requirements[country]:,.2f} \\")
+        # 用 .get 容错：停用单一国家规则时明细缺失，按 0 输出而不是报错
+        report_lines.append(rf"Portfolio GMV threshold ({country}): & {country_threshold_amounts.get(country, 0):,.2f} \\")
+        report_lines.append(rf"Margin requirement ({country}): & {country_requirements.get(country, 0):,.2f} \\")
         report_lines.append(r"\addlinespace")
     report_lines.append(rf"Margin requirement (Aggregate country condition): & {aggregate_country_requirement:,.2f} \\")
     report_lines.append(r"\addlinespace")
@@ -169,7 +170,8 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
         report_lines.append(r"\begin{tabular}{l r}")
         for position in illiquid_positions:
             report_lines.append(rf"{position['ticker']} Days of Holding: & {position['days_of_holdings']:.9f} \\")
-            report_lines.append(rf"{position['ticker']} liquidity charge: & {position['liquidity_charge']:,.2f} \\")
+            # 用 .get 容错：停用流动性规则时持仓里没有 liquidity_charge 字段
+            report_lines.append(rf"{position['ticker']} liquidity charge: & {position.get('liquidity_charge', 0):,.2f} \\")
         report_lines.append(r"\addlinespace")
         report_lines.append(rf"Total Margin requirement: & {liquidity_requirement:,.2f} \\")
         report_lines.append(r"\end{tabular}")
@@ -183,15 +185,15 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\textbf{e) Sector Additional}")
     report_lines.append("")
     report_lines.append(r"\begin{tabular}{l r}")
-    # 阈值与控制台一致：GMV 的 15%。
-    sector_threshold = 15 / 100 * gross_market_value
-    report_lines.append(rf"Sector GMV threshold: & {sector_threshold:,.2f} \\")
+    # M6 修改：阈值金额由 SectorRule 计算后传入，报告不再自己写死 15%。
+    report_lines.append(rf"Sector GMV threshold: & {sector_threshold_amount:,.2f} \\")
     report_lines.append(r"\addlinespace")
     # 每个行业输出两行（净敞口、要求）；行业名已是英文，直接使用。
     for sector, nmv in sector_nmv.items():
         sector_en = sector.replace("&", r"\&")
         report_lines.append(rf"{sector_en} Sector NMV: & {nmv:,.2f} \\")
-        report_lines.append(rf"{sector_en} Sector Margin: & {sector_requirements[sector]:,.2f} \\")
+        # 用 .get 容错：停用行业规则时明细缺失，按 0 输出而不是报错
+        report_lines.append(rf"{sector_en} Sector Margin: & {sector_requirements.get(sector, 0):,.2f} \\")
     report_lines.append(r"\addlinespace")
     report_lines.append(rf"Total Margin requirement: & {sector_requirement:,.2f} \\")
     report_lines.append(r"\end{tabular}")

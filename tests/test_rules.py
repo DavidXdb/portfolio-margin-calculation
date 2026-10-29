@@ -4,6 +4,7 @@ import pytest
 
 from rules.base import MarginContext
 from rules.bucket_rule import BucketRule
+from rules.engine import REGISTRY, RuleEngine
 from rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
                                 AggregateCountryRule, SectorRule,
                                 PortfolioConditionsRule)
@@ -219,6 +220,20 @@ class TestSectorRule:
         rule = SectorRule("sector", SECTOR_PARAMS)
         context = make_context(sector_nmv={"Technology": 10_000_000})
         assert rule.apply(context).requirement == 0
+
+
+class TestRuleEngine:
+    def test_disabled_rules_get_zero_results(self):
+        # 只启用一条规则：其余已注册规则仍出现在结果里，但要求为 0
+        rule_config = {
+            "rules": ["initial_requirement"],
+            "initial_requirement": INITIAL_PARAMS,
+        }
+        engine = RuleEngine(rule_config)
+        results = engine.run(make_context(gross_market_value=800_000_000))
+        assert len(results) == len(REGISTRY)
+        assert results["sector"].requirement == 0
+        assert results["initial_requirement"].requirement == pytest.approx(800_000_000 * 12.5 / 100)
 
 
 class TestPortfolioConditionsRule:

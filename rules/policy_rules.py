@@ -122,7 +122,8 @@ class SectorRule(Rule):
         print("行业要求合计 =", sector_requirement)
         print()
 
-        return RuleResult(sector_requirement, {"sector_requirements": sector_requirements})
+        return RuleResult(sector_requirement, {"sector_requirements": sector_requirements,
+                                               "threshold_amount": threshold_amount})
 
 class PortfolioConditionsRule(Rule):
     """Portfolio Conditions：发行人敞口（占总市值比例）超过对应等级阈值（High 2%/Medium 1.5%/Low 0.8%）时，对增量部分计收 100% 保证金。"""

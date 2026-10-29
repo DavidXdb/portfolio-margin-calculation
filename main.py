@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 
 # 持仓与证券信息的加载已移入 data_load.py，这里导入并调用。
 from data_load import load_positions, load_securities, enrich_positions, decompose_index_futures, load_country_tiers
@@ -73,7 +74,8 @@ context = MarginContext(
 
 # 第三步：规则引擎按 YAML 的 rules 列表顺序执行启用的规则。
 # 停用某条规则：在 YAML 的 rules 列表里删掉对应行。
-rule_config = load_rule_config("configs/jpm_margin_v2024.yaml")
+# M6 修改：配置路径可用环境变量 PB_RULE_CONFIG 覆盖（测试"停用规则"时用）。
+rule_config = load_rule_config(os.environ.get("PB_RULE_CONFIG", "configs/jpm_margin_v2024.yaml"))
 engine = RuleEngine(rule_config)
 results = engine.run(context)
 
@@ -112,17 +114,19 @@ total_margin_requirement = base_margin_requirement + portfolio_conditions_requir
 # 控制台报告打印已移入 console_report.py；main.py 只生成 PDF 报告，不再打印终端报告。
 
 # 第 2 阶段修改：以下变量改从规则引擎结果中取出，供 xlsx 明细与 PDF 报告使用。
-initial_requirement_part_a = results["initial_requirement"].details["part_a"]
-initial_requirement_part_b = results["initial_requirement"].details["part_b"]
-issuer_grades = results["portfolio_conditions"].details["issuer_grades"]
-port_condition_req = results["portfolio_conditions"].details["port_condition_req"]
-port_condition_thresholds = results["portfolio_conditions"].details["port_condition_thresholds"]
-country_requirements = results["single_country"].details["country_requirements"]
-country_threshold_amounts = results["single_country"].details["country_threshold_amounts"]
+# M6 修改：停用某条规则时明细缺失，一律用 .get 给默认值而不是报错。
+initial_requirement_part_a = results["initial_requirement"].details.get("part_a", 0)
+initial_requirement_part_b = results["initial_requirement"].details.get("part_b", 0)
+issuer_grades = results["portfolio_conditions"].details.get("issuer_grades", {})
+port_condition_req = results["portfolio_conditions"].details.get("port_condition_req", {})
+port_condition_thresholds = results["portfolio_conditions"].details.get("port_condition_thresholds", {})
+country_requirements = results["single_country"].details.get("country_requirements", {})
+country_threshold_amounts = results["single_country"].details.get("country_threshold_amounts", {})
 single_country_requirement = results["single_country"].requirement
 aggregate_country_requirement = results["aggregate_country"].requirement
 liquidity_requirement = results["liquidity"].requirement
-sector_requirements = results["sector"].details["sector_requirements"]
+sector_requirements = results["sector"].details.get("sector_requirements", {})
+sector_threshold_amount = results["sector"].details.get("threshold_amount", 0)
 sector_requirement = results["sector"].requirement
 
 
@@ -153,7 +157,8 @@ for ticker in issuer_gmv:
     security_sheet.cell(row=row_number, column=2, value=info["market_cap"])
     security_sheet.cell(row=row_number, column=3, value=info["adtv"])
     security_sheet.cell(row=row_number, column=4, value=issuer_dohs[ticker])
-    security_sheet.cell(row=row_number, column=5, value=issuer_grades[ticker])
+    # M6 修改：停用组合条件规则时等级明细缺失，用 "N/A" 占位。
+    security_sheet.cell(row=row_number, column=5, value=issuer_grades.get(ticker, "N/A"))
     security_sheet.cell(row=row_number, column=6, value=issuer_lcl_flags[ticker])
     security_sheet.cell(row=row_number, column=7, value=info["country"])
     security_sheet.cell(row=row_number, column=8, value=info["gics_sector"])
@@ -219,18 +224,19 @@ portfolio_sheet.cell(row=1, column=5, value="Requirement")
 # 逐发行人写一行：要求小于等于 0 的跳过，与报告 V.4 的筛选一致。
 row_number = 2
 for ticker, net in issuer_exposure.items():
-    if port_condition_req[ticker] <= 0:
+    # M6 修改：停用组合条件规则时明细缺失，整张表只保留表头（全部跳过）。
+    if port_condition_req.get(ticker, 0) <= 0:
         continue
 
-    grade = issuer_grades[ticker]
+    grade = issuer_grades.get(ticker, "N/A")
     # 第 2 阶段修改：阈值金额改从规则引擎结果中取出。
-    pc_threshold_amount = port_condition_thresholds[ticker]
+    pc_threshold_amount = port_condition_thresholds.get(ticker, 0)
 
     portfolio_sheet.cell(row=row_number, column=1, value=ticker)
     portfolio_sheet.cell(row=row_number, column=2, value=grade)
     portfolio_sheet.cell(row=row_number, column=3, value=net)
     portfolio_sheet.cell(row=row_number, column=4, value=pc_threshold_amount)
-    portfolio_sheet.cell(row=row_number, column=5, value=port_condition_req[ticker])
+    portfolio_sheet.cell(row=row_number, column=5, value=port_condition_req.get(ticker, 0))
 
     portfolio_sheet.cell(row=row_number, column=3).number_format = "#,##0.00"
     portfolio_sheet.cell(row=row_number, column=4).number_format = "#,##0.00"
@@ -242,5 +248,5 @@ security_workbook.save("output/issuer_details.xlsx")
 print("已写出 output/issuer_details.xlsx")
 
 # 调用报告生成函数并传入组合数据，生成 report.tex。
-write_report_tex(positions, long_total, short_total, net_exposure, gross_market_value, long_short_ratio, largest_sector, sector_share, largest_country, country_share, tier1_share, tier2_share, lcl_share, liquid_share, initial_requirement_part_a, initial_requirement_part_b, country_nmv, country_threshold_amounts, country_requirements, single_country_requirement, aggregate_country_requirement, liquidity_requirement, sector_nmv, sector_requirements, sector_requirement, section_a, issuer_exposure, largest_short_stress, stress_losses, top_5_requirement, base_margin_requirement, portfolio_conditions_requirement, total_margin_requirement)
+write_report_tex(positions, long_total, short_total, net_exposure, gross_market_value, long_short_ratio, largest_sector, sector_share, largest_country, country_share, tier1_share, tier2_share, lcl_share, liquid_share, initial_requirement_part_a, initial_requirement_part_b, country_nmv, country_threshold_amounts, country_requirements, single_country_requirement, aggregate_country_requirement, liquidity_requirement, sector_nmv, sector_requirements, sector_threshold_amount, sector_requirement, section_a, issuer_exposure, largest_short_stress, stress_losses, top_5_requirement, base_margin_requirement, portfolio_conditions_requirement, total_margin_requirement)
 
