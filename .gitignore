@@ -11,7 +11,7 @@ __pycache__/
 # 程序生成的文件（每次运行都会重新生成）
 output/
 report.tex
-report.pdf
+report*.pdf
 report.aux
 report.log
 
