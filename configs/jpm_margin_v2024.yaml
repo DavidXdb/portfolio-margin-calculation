@@ -4,6 +4,16 @@
 
 version: "jpm_margin_v2024"
 
+# 启用规则列表：引擎按此顺序执行。
+# 停用某条规则：删掉对应行；调整执行顺序：移动行的位置。
+rules:
+  - initial_requirement
+  - single_country
+  - aggregate_country
+  - liquidity
+  - sector
+  - portfolio_conditions
+
 # Section A a)：按组合总市值（GMV）分层计收
 initial_requirement:
   part_a:

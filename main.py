@@ -6,7 +6,10 @@ from data_load import load_positions, load_securities, enrich_positions, decompo
 
 from metrics import LongShort_portfolio, issuer_exposure, compute_short_issuer_stress, compute_top_5_requirement, compute_long_short_ratio, compute_country_nmv, compute_sector_nmv, compute_issuer_gmv, compute_direct_lcl, compute_direct_grade, compute_issuer_report_metrics, compute_portfolio_structure, compute_structure_shares
 
-from rules import compute_initial_requirement, compute_single_country_requirement, compute_aggregate_country_requirement, compute_liquidity_requirement, compute_sector_requirement, compute_base_margin, compute_portfolio_conditions
+# 第 2 阶段修改：规则条款改由规则引擎执行（可插拔规则）。
+from rule_config import load_rule_config
+from rules.base import MarginContext
+from rules.engine import RuleEngine
 
 
 # 用于把明细表写入 xlsx
@@ -41,55 +44,58 @@ long_total, short_total, net_exposure, gross_market_value = LongShort_portfolio(
 
 # Long/Short 比率已移入 metrics.py，这里调用并接收。
 long_short_ratio = compute_long_short_ratio(long_total, short_total)
-# Initial Requirement 已移入 rules.py，这里调用并接收三个值。
-initial_requirement_part_a, initial_requirement_part_b, section_a = compute_initial_requirement(gross_market_value, long_short_ratio, net_exposure)
 
-# 国家档位文件加载已移入 data_load.py，这里调用并接收。
+# ---- 第 2 阶段修改：规则条款调用改为"指标 → context → 引擎"三步。----
+
+# 第一步：算好规则需要的全部指标（指标计算仍来自 metrics.py）。
 country_tiers = load_country_tiers()
-# 按国家汇总净敞口已移入 metrics.py，这里调用并接收。
 country_nmv = compute_country_nmv(issuer_exposure, securities)
-# 单一国家集中度限额已移入 rules.py，这里调用并接收三个值。
-single_country_requirement, country_requirements, country_threshold_amounts = compute_single_country_requirement(country_nmv, country_tiers, gross_market_value)
-# 并入 Section A（国家要求属于 Section A，参与取大比较）
-section_a = section_a + single_country_requirement
-print("Section A 累计 =", section_a)
-print()
-
-# 发行人总市值归集已移入 metrics.py，这里调用并接收。
 issuer_gmv = compute_issuer_gmv(positions, constituent_positions)
-
-# LCL 标志查询表已移入 metrics.py，这里调用并接收。
 direct_lcl = compute_direct_lcl(positions)
-# 国家等级对应保证金已移入 rules.py，这里调用并接收。
-aggregate_country_requirement = compute_aggregate_country_requirement(issuer_gmv, direct_lcl, securities, country_tiers)
-# 并入 Section A
-section_a = section_a + aggregate_country_requirement
-print("Section A 累计 =", section_a)
-print()
-
-# 流动性要求已移入 rules.py，这里调用并接收；费用明细由函数直接写入持仓。
-liquidity_requirement = compute_liquidity_requirement(positions)
-# 并入 Section A
-section_a = section_a + liquidity_requirement
-print("Section A 累计 =", section_a)
-print()
-
-# 行业净敞口汇总已移入 metrics.py，这里调用并接收。
 sector_nmv = compute_sector_nmv(issuer_exposure, securities)
-# 行业要求已移入 rules.py，这里调用并接收合计与明细。
-sector_requirement, sector_requirements = compute_sector_requirement(sector_nmv, gross_market_value)
-# 并入 Section A
-section_a = section_a + sector_requirement
+direct_grade = compute_direct_grade(positions)
+
+# 第二步：把指标装进 context；规则只从 context 取值，不直接调用指标函数。
+context = MarginContext(
+    positions=positions,
+    securities=securities,
+    country_tiers=country_tiers,
+    gross_market_value=gross_market_value,
+    long_short_ratio=long_short_ratio,
+    net_exposure=net_exposure,
+    country_nmv=country_nmv,
+    sector_nmv=sector_nmv,
+    issuer_gmv=issuer_gmv,
+    issuer_exposure=issuer_exposure,
+    direct_lcl=direct_lcl,
+    direct_grade=direct_grade,
+)
+
+# 第三步：规则引擎按 YAML 的 rules 列表顺序执行启用的规则。
+# 停用某条规则：在 YAML 的 rules 列表里删掉对应行。
+rule_config = load_rule_config("configs/jpm_margin_v2024.yaml")
+engine = RuleEngine(rule_config)
+results = engine.run(context)
+
+# Section A 由五条规则的合计组成：初始要求、单一国家、国家等级、流动性、行业。
+section_a = results["initial_requirement"].requirement
+section_a = section_a + results["single_country"].requirement
+print("Section A 累计 =", section_a)
+print()
+section_a = section_a + results["aggregate_country"].requirement
+print("Section A 累计 =", section_a)
+print()
+section_a = section_a + results["liquidity"].requirement
+print("Section A 累计 =", section_a)
+print()
+section_a = section_a + results["sector"].requirement
 print("Section A 累计 =", section_a)
 print()
 
-# Base Margin 取大已移入 rules.py，这里调用并接收。
-base_margin_requirement = compute_base_margin(section_a, largest_short_stress, top_5_requirement)
-
-# 等级查询表已移入 metrics.py，这里调用并接收。
-direct_grade = compute_direct_grade(positions)
-# Portfolio Conditions 已移入 rules.py，这里调用并接收合计与两个明细字典。
-portfolio_conditions_requirement, issuer_grades, port_condition_req = compute_portfolio_conditions(issuer_exposure, direct_grade, securities, gross_market_value)
+# Base Margin 取大：Section A、Short Issuer Stress、Top 5 三者取最大值。
+base_margin_requirement = max(section_a, largest_short_stress, top_5_requirement)
+print("Base Margin Requirement =", base_margin_requirement)
+print()
 
 # 报告所需的发行人级指标已移入 metrics.py，这里调用并接收两个字典。
 issuer_lcl_flags, issuer_dohs = compute_issuer_report_metrics(positions, issuer_gmv, securities)
@@ -100,9 +106,24 @@ largest_sector, largest_sector_gmv, largest_country, largest_country_gmv, tier_g
 sector_share, country_share, tier1_share, tier2_share, lcl_share, liquid_share = compute_structure_shares(largest_sector_gmv, largest_country_gmv, tier_gmv, lcl_gmv, liquid_gmv, gross_market_value)
 
 # 总保证金 = Base Margin + Portfolio Conditions
+portfolio_conditions_requirement = results["portfolio_conditions"].requirement
 total_margin_requirement = base_margin_requirement + portfolio_conditions_requirement
 
 # 控制台报告打印已移入 console_report.py；main.py 只生成 PDF 报告，不再打印终端报告。
+
+# 第 2 阶段修改：以下变量改从规则引擎结果中取出，供 xlsx 明细与 PDF 报告使用。
+initial_requirement_part_a = results["initial_requirement"].details["part_a"]
+initial_requirement_part_b = results["initial_requirement"].details["part_b"]
+issuer_grades = results["portfolio_conditions"].details["issuer_grades"]
+port_condition_req = results["portfolio_conditions"].details["port_condition_req"]
+port_condition_thresholds = results["portfolio_conditions"].details["port_condition_thresholds"]
+country_requirements = results["single_country"].details["country_requirements"]
+country_threshold_amounts = results["single_country"].details["country_threshold_amounts"]
+single_country_requirement = results["single_country"].requirement
+aggregate_country_requirement = results["aggregate_country"].requirement
+liquidity_requirement = results["liquidity"].requirement
+sector_requirements = results["sector"].details["sector_requirements"]
+sector_requirement = results["sector"].requirement
 
 
 # openpyxl 的三个基本动作——创建工作簿、写单元格、保存文件。
@@ -202,13 +223,8 @@ for ticker, net in issuer_exposure.items():
         continue
 
     grade = issuer_grades[ticker]
-    if grade == "High Grade":
-        pc_threshold_rate = 2 / 100
-    elif grade == "Medium Grade":
-        pc_threshold_rate = 1.5 / 100
-    else:
-        pc_threshold_rate = 0.8 / 100
-    pc_threshold_amount = pc_threshold_rate * gross_market_value
+    # 第 2 阶段修改：阈值金额改从规则引擎结果中取出。
+    pc_threshold_amount = port_condition_thresholds[ticker]
 
     portfolio_sheet.cell(row=row_number, column=1, value=ticker)
     portfolio_sheet.cell(row=row_number, column=2, value=grade)
