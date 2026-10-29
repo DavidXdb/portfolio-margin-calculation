@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from rules.base import Rule, RuleResult
+from .base import Rule, RuleResult
 
 class InitialRequirementRule(Rule):
     """Initial Requirement：由 (a) 与 (b) 两部分之和组成。

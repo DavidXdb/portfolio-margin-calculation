@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from rules.base import Rule, RuleResult
+from .base import Rule, RuleResult
 
 class BucketRule(Rule):
     """流动性要求：按持有天数分档，对"超过档位下限天数"的市值部分计收保证金。

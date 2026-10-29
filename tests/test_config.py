@@ -2,8 +2,8 @@
 """配置文件与规则注册表的一致性测试。"""
 from pathlib import Path
 
-from rule_config import load_rule_config
-from rules.engine import REGISTRY
+from pb_margin.rule_config import load_rule_config
+from pb_margin.rules.engine import REGISTRY
 
 # 项目根目录：tests/ 的上一级
 ROOT = Path(__file__).resolve().parent.parent

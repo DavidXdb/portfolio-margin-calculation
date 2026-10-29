@@ -2,12 +2,12 @@
 """rules 包中各规则的单元测试。参数直接在测试里写明，与 YAML 解耦。"""
 import pytest
 
-from rules.base import MarginContext
-from rules.bucket_rule import BucketRule
-from rules.engine import REGISTRY, RuleEngine
-from rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
-                                AggregateCountryRule, SectorRule,
-                                PortfolioConditionsRule)
+from pb_margin.rules.base import MarginContext
+from pb_margin.rules.bucket_rule import BucketRule
+from pb_margin.rules.engine import REGISTRY, RuleEngine
+from pb_margin.rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
+                                          AggregateCountryRule, SectorRule,
+                                          PortfolioConditionsRule)
 
 INITIAL_PARAMS = {
     "part_a": {"first_tier_gmv_limit": 1_000_000_000,

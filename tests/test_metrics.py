@@ -2,11 +2,11 @@
 """metrics.py 中各指标函数的单元测试。"""
 import pytest
 
-from metrics import (LongShort_portfolio, compute_long_short_ratio,
-                     issuer_exposure, compute_country_nmv, compute_sector_nmv,
-                     compute_issuer_gmv, compute_direct_lcl, compute_direct_grade,
-                     compute_short_issuer_stress, compute_top_5_requirement,
-                     compute_structure_shares)
+from pb_margin.metrics import (LongShort_portfolio, compute_long_short_ratio,
+                               issuer_exposure, compute_country_nmv, compute_sector_nmv,
+                               compute_issuer_gmv, compute_direct_lcl, compute_direct_grade,
+                               compute_short_issuer_stress, compute_top_5_requirement,
+                               compute_structure_shares)
 
 
 def test_long_short_portfolio():

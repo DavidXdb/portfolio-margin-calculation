@@ -17,3 +17,8 @@ report.log
 
 # 原始数据导出（由 yfinance 脚本生成，不入库）
 程序直接导出的数据/
+
+# pip 安装与打包产生的目录
+*.egg-info/
+build/
+dist/

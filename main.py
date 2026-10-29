@@ -3,21 +3,22 @@
 import os
 
 # 持仓与证券信息的加载已移入 data_load.py，这里导入并调用。
-from data_load import load_positions, load_securities, enrich_positions, decompose_index_futures, load_country_tiers
+# M0 修改：模块已移入 src/pb_margin 包，导入路径统一改为 pb_margin.xxx。
+from pb_margin.data_load import load_positions, load_securities, enrich_positions, decompose_index_futures, load_country_tiers
 
-from metrics import LongShort_portfolio, issuer_exposure, compute_short_issuer_stress, compute_top_5_requirement, compute_long_short_ratio, compute_country_nmv, compute_sector_nmv, compute_issuer_gmv, compute_direct_lcl, compute_direct_grade, compute_issuer_report_metrics, compute_portfolio_structure, compute_structure_shares
+from pb_margin.metrics import LongShort_portfolio, issuer_exposure, compute_short_issuer_stress, compute_top_5_requirement, compute_long_short_ratio, compute_country_nmv, compute_sector_nmv, compute_issuer_gmv, compute_direct_lcl, compute_direct_grade, compute_issuer_report_metrics, compute_portfolio_structure, compute_structure_shares
 
 # 第 2 阶段修改：规则条款改由规则引擎执行（可插拔规则）。
-from rule_config import load_rule_config
-from rules.base import MarginContext
-from rules.engine import RuleEngine
+from pb_margin.rule_config import load_rule_config
+from pb_margin.rules.base import MarginContext
+from pb_margin.rules.engine import RuleEngine
 
 
 # 用于把明细表写入 xlsx
 import openpyxl
 
 # 报告生成函数：写出 report.tex，再用 pdflatex 编译成 PDF。
-from make_report_tex import write_report_tex
+from pb_margin.make_report_tex import write_report_tex
 
 positions = load_positions()
 print("持仓条数 =", len(positions))

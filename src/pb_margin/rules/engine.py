@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from rules.base import RuleResult
-from rules.bucket_rule import BucketRule
-from rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
-                                AggregateCountryRule, SectorRule, PortfolioConditionsRule)
+from .base import RuleResult
+from .bucket_rule import BucketRule
+from .policy_rules import (InitialRequirementRule, SingleCountryRule,
+                           AggregateCountryRule, SectorRule, PortfolioConditionsRule)
 
 # 规则注册表：YAML rules 列表里的名字 → 规则类。
 # 新增规则：写一个 Rule 子类，在这里注册一行，再到 YAML 的 rules 列表里启用。

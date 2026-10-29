@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rule_config import load_rule_config
+from pb_margin.rule_config import load_rule_config
 
 # 项目根目录：tests/ 的上一级
 ROOT = Path(__file__).resolve().parent.parent
