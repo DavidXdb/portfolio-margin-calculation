@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-# 这是我用来从yfinance抓取证券信息的程序，尚未和核心代码文件做文件/变量上的对接和适配
 # 读取两个文件中的ticker，去重、调整ticker格式，都在一个脚本内完成。
 # 查找依据：彭博ticker；数据源：yfinance；查找指标：行业，市值，3个月日均交易量
 
@@ -27,7 +26,7 @@ def retry(func, *args, retries=3, backoff=1.0, **kwargs):
             time.sleep(backoff * (2 ** i) + random.uniform(0, 0.5))
 
 
-# ============ 本地映射：y_ticker ============
+# ============ 本地映射：group 和 y_ticker ============
 
 def bbg_to_cn(ticker: str) -> str:
     return ticker.split()[0].strip().zfill(6)
@@ -42,7 +41,7 @@ def _infer_yf_suffix(code: str) -> str | None:
         return ".BJ"
     return None
     
-def yf_ticker_map(tickers):
+def yf_ticker_map(tickers: list[str]):
     """
     国内市场 ticker（如 '001391'）→ Yahoo ticker（如 '001391.SZ'）。
     直接按代码前缀推断交易所后缀，不再读本地 CSV。
@@ -105,9 +104,9 @@ def fetch_one(ticker: str, yf_map: dict):
 # ============ 主流程：并发 + 断点续跑 ============
 
 def build_dataset(
-    tickers,
+    tickers: list,
     max_workers: int = 2,
-    cache_path: str = "securityinfo_yf.csv",
+    cache_path: str = "security_info.csv",
 ):
     yf_map = yf_ticker_map(tickers)   # ← 传 ticker 列表，不再传 CSV 路径
 
@@ -161,7 +160,7 @@ if __name__ == "__main__":
     stock_tickers = stock_tickers.astype(str).str.strip().str[:6]
 
     # 股指成分list中ticker的格式为中国市场标准六位数字格式
-    constituent_df = pd.read_csv("constituents.csv")
+    constituent_df = pd.read_csv("constituent.csv")
     constituent_tickers = constituent_df["ticker"].dropna().drop_duplicates().astype(str)
 
     # 把 constituent_tickers 和 stock_tickers 粘在一起成 tickers
@@ -169,7 +168,7 @@ if __name__ == "__main__":
     tickers = tickers.drop_duplicates().to_list()
 
     batch_size = 100
-    i = 0
+    i = 16
     batch = tickers[i * batch_size: (i + 1) * batch_size]
     print(f"第 {i+1} 组，共 {len(batch)} 个 ticker")
 

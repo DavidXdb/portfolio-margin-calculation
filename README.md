@@ -1,4 +1,4 @@
-# PB Margin Calculator
+# Portfolio Margin Calculation
 
 根据主经纪商（Prime Brokerage）保证金规则（Margin Rule）计算基金投资组合所需保证金（Margin Requirement）的工具。
 
