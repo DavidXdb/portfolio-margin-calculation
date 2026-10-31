@@ -245,6 +245,7 @@ for ticker, net in issuer_exposure.items():
     row_number = row_number + 1
 
 # 三张表都写完后保存一次。
+os.makedirs("output", exist_ok=True)
 security_workbook.save("output/issuer_details.xlsx")
 print("已写出 output/issuer_details.xlsx")
 
