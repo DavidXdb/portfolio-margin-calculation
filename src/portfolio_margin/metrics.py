@@ -1,6 +1,5 @@
 def LongShort_portfolio(positions):
-    """累加多空合计，计算净敞口与总市值，并打印组合合计。"""
-    # 两个累加变量，用来存放"多头合计"和"空头合计"。
+    # 两个累加变量："多头合计"和"空头合计"。
     # 累加变量的初始值是 0，之后在循环中不断把新数值加进去。
     long_total = 0
     short_total = 0
@@ -23,8 +22,6 @@ def LongShort_portfolio(positions):
     print("净敞口 =", net_exposure)
 
     # 总市值 = 多头合计的绝对值 + 空头合计的绝对值。
-    # abs() 是 Python 内置函数，用来取绝对值。
-    # 总市值不冲抵：多空两侧取绝对值相加。
     gross_market_value = abs(long_total) + abs(short_total)
 
     print("总市值 =", gross_market_value)
@@ -32,12 +29,9 @@ def LongShort_portfolio(positions):
     return long_total, short_total, net_exposure, gross_market_value
 
 def compute_long_short_ratio(long_total, short_total):
-    """Long/Short 比率 = 多头总市值 ÷ 空头总市值。"""
-    # 空头合计存的是带符号的负数，这里用 abs() 转成正数再相除。
     return long_total / abs(short_total)
 
 def issuer_exposure(positions, constituent_positions):
-    """按发行人聚合三类敞口：合并净敞口、直接持仓敞口、指数成份持仓敞口。"""
     issuer_exposure = {}
     # 直接持仓敞口：发行人在直接持仓中的有向市值之和。
     direct_holding_exposure = {}
@@ -57,7 +51,6 @@ def issuer_exposure(positions, constituent_positions):
             direct_holding_exposure[ticker] = 0
         direct_holding_exposure[ticker] = direct_holding_exposure[ticker] + position["signed_market_value"]
 
-    # 再加成份持仓（方向与 ES 持仓一致）。
     for constituent_position in constituent_positions:
         ticker = constituent_position["ticker"]
         if constituent_position["direction"] == "多头":
@@ -73,7 +66,6 @@ def issuer_exposure(positions, constituent_positions):
             index_holding_exposure[ticker] = 0
         index_holding_exposure[ticker] = index_holding_exposure[ticker] + signed_value
 
-    # 补全键：只在直接或只在成份中出现的 ticker，在另一侧补 0。
     for ticker in issuer_exposure:
         if ticker not in direct_holding_exposure:
             direct_holding_exposure[ticker] = 0
@@ -92,7 +84,7 @@ def issuer_exposure(positions, constituent_positions):
     return issuer_exposure, direct_holding_exposure, index_holding_exposure
 
 def compute_country_nmv(issuer_exposure, securities):
-    """按国家汇总净敞口：{country: 该国发行人净有向市值之和}。"""
+    # 按国家汇总净敞口：{country: 该国发行人净有向市值之和}。
     country_nmv = {}
     for ticker, net in issuer_exposure.items():
         country = securities[ticker]["country"]
@@ -102,7 +94,7 @@ def compute_country_nmv(issuer_exposure, securities):
     return country_nmv
 
 def compute_sector_nmv(issuer_exposure, securities):
-    """按 GICS 行业汇总净敞口：{行业: 该行业发行人净有向市值之和}。"""
+    # 按 GICS 行业汇总净敞口：{行业: 该行业发行人净有向市值之和}。
     sector_nmv = {}
     for ticker, net in issuer_exposure.items():
         sector = securities[ticker]["gics_sector"]
@@ -112,7 +104,7 @@ def compute_sector_nmv(issuer_exposure, securities):
     return sector_nmv
 
 def compute_issuer_gmv(positions, constituent_positions):
-    """发行人总市值归集：直接持仓与成份持仓按 |市值| 相加。"""
+    # 发行人总市值归集：直接持仓与成份持仓按 |市值| 相加。
     issuer_gmv = {}
     for position in positions:
         if position["is_index_futures"]:
@@ -137,7 +129,7 @@ def compute_issuer_gmv(positions, constituent_positions):
     return issuer_gmv
 
 def compute_direct_lcl(positions):
-    """有直接持仓的股票所属的发行人的 LCL 标志查询表：{ticker: large_cap_liquid}。"""
+    # 直接持仓中的股票，其所属的发行人的 LCL 标志查询表：{ticker: large_cap_liquid}。
     direct_lcl = {}
     for position in positions:
         if position["is_index_futures"]:
@@ -146,7 +138,7 @@ def compute_direct_lcl(positions):
     return direct_lcl
 
 def compute_direct_grade(positions):
-    """有直接持仓的股票所属的发行人的等级查询表：{ticker: issuer_grade}。"""
+    # 直接持仓的股票，其发行人所属等级的查询表：{ticker: issuer_grade}。
     direct_grade = {}
     for position in positions:
         if position["is_index_futures"]:
@@ -155,7 +147,7 @@ def compute_direct_grade(positions):
     return direct_grade
 
 def compute_issuer_report_metrics(positions, issuer_gmv, securities):
-    """报告所需的发行人级指标：LCL 标志与持有天数。"""
+    # 需报告的发行人级别指标：LCL 标志与持有天数
     issuer_lcl_flags = {}
     issuer_dohs = {}
     for position in positions:
@@ -174,7 +166,7 @@ def compute_issuer_report_metrics(positions, issuer_gmv, securities):
     return issuer_lcl_flags, issuer_dohs
 
 def compute_portfolio_structure(issuer_gmv, securities, country_tiers, issuer_lcl_flags, issuer_dohs):
-    """报告所需的组合结构聚合值：最大行业及其总市值、最大国家及其总市值、档位总市值、LCL 总市值与 DoH < 0.2 总市值。"""
+    # 报告所需的组合结构聚合值：最大行业及其总市值、最大国家及其总市值、档位总市值、LCL 总市值与 DoH < 0.2 总市值。
     # 投资组合中的各个行业总市值，并找最大行业
     sector_gmv = {}
     for ticker, gmv in issuer_gmv.items():
@@ -225,7 +217,7 @@ def compute_portfolio_structure(issuer_gmv, securities, country_tiers, issuer_lc
     return largest_sector, largest_sector_gmv, largest_country, largest_country_gmv, tier_gmv, lcl_gmv, liquid_gmv
 
 def compute_structure_shares(largest_sector_gmv, largest_country_gmv, tier_gmv, lcl_gmv, liquid_gmv, gross_market_value):
-    """报告所需的组合结构份额：各特殊小组的 GMV 占总体的百分比（保留两位小数）。"""
+    # 报告所需的组合结构份额：各特殊小组的 GMV 占总体的百分比（保留两位小数）。
     # 计算每个特殊小组的GMV占总体的比例，round(x, 2) 保留两位小数
     sector_share = round(largest_sector_gmv / gross_market_value * 100, 2)
     country_share = round(largest_country_gmv / gross_market_value * 100, 2)
@@ -237,7 +229,7 @@ def compute_structure_shares(largest_sector_gmv, largest_country_gmv, tier_gmv, 
     return sector_share, country_share, tier1_share, tier2_share, lcl_share, liquid_share
 
 def compute_short_issuer_stress(issuer_exposure, securities):
-    """Short Issuer Stress：按市值档位对净空头发行人施压，返回最大压力损失。"""
+    # Short Issuer Stress：按市值档位对净空头发行人施压，返回最大压力损失。
     largest_short_stress = 0
 
     for ticker, net in issuer_exposure.items():
@@ -276,7 +268,7 @@ def compute_short_issuer_stress(issuer_exposure, securities):
     return largest_short_stress
 
 def compute_top_5_requirement(issuer_exposure):
-    """Top 5 要求：对每个发行人做 ±50% 独立压力测试，取损失最大的 5 个求和。"""
+    # Top 5 要求：对每个发行人做 ±50% 独立压力测试，取损失最大的 5 个求和。
     stress_losses = []
     for ticker, net in issuer_exposure.items():
         loss = abs(net) * 0.5

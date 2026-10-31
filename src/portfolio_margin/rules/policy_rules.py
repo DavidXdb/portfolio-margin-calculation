@@ -44,7 +44,7 @@ class SingleCountryRule(Rule):
     """单一国家集中度限额：|净敞口| 超过该国档位阈值（阈值比例 × 总市值）的增量部分，按档位费率计收保证金。"""
     def apply(self, context):
         single_country_requirement = 0
-        # 存下每个国家的明细，供报告使用
+        
         country_requirements = {}
         country_threshold_amounts = {}
         for country, nmv in context.country_nmv.items():
@@ -129,7 +129,7 @@ class PortfolioConditionsRule(Rule):
     """Portfolio Conditions：发行人敞口（占总市值比例）超过对应等级阈值（High 2%/Medium 1.5%/Low 0.8%）时，对增量部分计收 100% 保证金。"""
     def apply(self, context):
         portfolio_conditions_requirement = 0
-        # 存下每个发行人的等级与要求明细，供报告使用
+    
         issuer_grades = {}
         port_condition_req = {}
         port_condition_thresholds = {}
@@ -140,7 +140,7 @@ class PortfolioConditionsRule(Rule):
             if ticker in context.direct_grade:
                 grade = context.direct_grade[ticker]
             else:
-                # 通过指数持有的发行人缺少价格数据，持有天数近似为 0，仅按市值判定等级
+                
                 market_cap = context.securities[ticker]["market_cap"]
                 if market_cap >= grade_market_caps["high"]:
                     grade = "High Grade"

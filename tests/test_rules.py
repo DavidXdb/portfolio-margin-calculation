@@ -2,10 +2,10 @@
 """rules 包中各规则的单元测试。参数直接在测试里写明，与 YAML 解耦。"""
 import pytest
 
-from pb_margin.rules.base import MarginContext
-from pb_margin.rules.bucket_rule import BucketRule
-from pb_margin.rules.engine import REGISTRY, RuleEngine
-from pb_margin.rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
+from portfolio_margin.rules.base import MarginContext
+from portfolio_margin.rules.bucket_rule import BucketRule
+from portfolio_margin.rules.engine import REGISTRY, RuleEngine
+from portfolio_margin.rules.policy_rules import (InitialRequirementRule, SingleCountryRule,
                                           AggregateCountryRule, SectorRule,
                                           PortfolioConditionsRule)
 

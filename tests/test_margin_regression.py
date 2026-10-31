@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pb_margin.rule_config import load_rule_config
+from portfolio_margin.rule_config import load_rule_config
 
 # 项目根目录：tests/ 的上一级
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,7 +38,7 @@ def test_full_run_matches_baseline():
 @pytest.mark.parametrize("rule_name", ALL_RULES)
 def test_program_runs_with_rule_disabled(rule_name, tmp_path):
     # 复制配置并删掉一条规则，写到临时文件
-    config = load_rule_config(ROOT / "configs" / "jpm_margin_v2024.yaml")
+    config = load_rule_config(ROOT / "configs" / "ms_margin_v2024.yaml")
     config["rules"] = [r for r in config["rules"] if r != rule_name]
     config_path = tmp_path / "config.yaml"
     with open(config_path, "w", encoding="utf-8") as file:

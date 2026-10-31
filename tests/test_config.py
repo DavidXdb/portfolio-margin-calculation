@@ -2,17 +2,17 @@
 """配置文件与规则注册表的一致性测试。"""
 from pathlib import Path
 
-from pb_margin.rule_config import load_rule_config
-from pb_margin.rules.engine import REGISTRY
+from portfolio_margin.rule_config import load_rule_config
+from portfolio_margin.rules.engine import REGISTRY
 
 # 项目根目录：tests/ 的上一级
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = ROOT / "configs" / "jpm_margin_v2024.yaml"
+CONFIG_PATH = ROOT / "configs" / "ms_margin_v2024.yaml"
 
 
 def test_config_loads():
     config = load_rule_config(CONFIG_PATH)
-    assert config["version"] == "jpm_margin_v2024"
+    assert config["version"] == "ms_margin_v2024"
     assert isinstance(config["rules"], list)
 
 

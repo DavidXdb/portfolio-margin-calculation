@@ -1,11 +1,11 @@
-# JPM Margin Policy v2024 规则参数。
+# Morgan Stanley Margin Policy v2024 规则参数。
 # 费率与阈值比率一律用百分数表示：12.5 即 12.5%。
-# 规则变更只改本文件，不改代码。
+# 本规则变更只改本文件，不涉及代码修改。
 
-version: "jpm_margin_v2024"
+version: "ms_margin_v2024"
 
-# 启用规则列表：引擎按此顺序执行。
-# 停用某条规则：删掉对应行；调整执行顺序：移动行的位置。
+# 启用规则列表时：引擎按此顺序执行。
+# 停用某条规则时：删掉对应行；调整执行顺序：移动行的位置。
 rules:
   - initial_requirement
   - single_country

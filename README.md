@@ -35,7 +35,7 @@ python3 -m pytest
 
 ## 配置驱动与可插拔规则
 
-全部规则参数集中在 `configs/jpm_margin_v2024.yaml`，程序代码本身不含规则条款：
+全部规则参数集中在 `configs/ms_margin_v2024.yaml`，程序代码本身不含规则条款：
 
 - **调整费率或阈值**：只改 YAML；
 - **停用一条规则**：在 YAML 的 `rules` 列表中删除对应行；
@@ -50,7 +50,7 @@ python3 -m pytest
 ├── configs/                    # 规则配置（YAML）
 ├── data/                       # 证券信息、国家档位、指数成份
 ├── examples/                   # 示例组合（xlsx）
-├── src/pb_margin/              # 源代码包
+├── src/portfolio_margin/       # 源代码包
 │   ├── data_load.py            # 数据加载与预处理（含指数成份拆分）
 │   ├── metrics.py              # 指标计算（敞口、压力测试、组合结构）
 │   ├── rule_config.py          # YAML 配置加载

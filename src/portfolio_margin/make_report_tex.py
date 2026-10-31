@@ -1,27 +1,25 @@
 # -*- coding: utf-8 -*-
-
 # 报告生成脚本：运行后生成 report.tex，再用 pdflatex 编译成 PDF。
 
 def write_report_tex(positions, long_total, short_total, net_exposure, gross_market_value, long_short_ratio, largest_sector, sector_share, largest_country, country_share, tier1_share, tier2_share, lcl_share, liquid_share, initial_requirement_part_a, initial_requirement_part_b, country_nmv, country_threshold_amounts, country_requirements, single_country_requirement, aggregate_country_requirement, liquidity_requirement, sector_nmv, sector_requirements, sector_threshold_amount, sector_requirement, section_a, issuer_exposure, largest_short_stress, stress_losses, top_5_requirement, base_margin_requirement, portfolio_conditions_requirement, total_margin_requirement):
-    """接收组合数据，生成 LaTeX 报告文本并写出 report.tex。"""
-
+    
     # 用列表逐行存放报告内容，最后一次性写入文件。
     report_lines = []
 
     # 文档头：文档类、字体编码、标题、正文环境开始。
     report_lines.append(r"\documentclass{article}")
-    # T1 字体编码：让 < 与 > 能直接书写（默认编码会把它们渲染成其他符号）。
+    # T1 字体编码：< 与 > 能直接书写。
     report_lines.append(r"\usepackage[T1]{fontenc}")
 
-    # geometry 宏包：用 margin 参数统一设置页边距（默认页边距较宽，正文区域偏小）。
+    # 统一设置页边距。
     report_lines.append(r"\usepackage[margin=2cm]{geometry}")
 
-    # booktabs 宏包：提供 \addlinespace，用于在表格行之间插入竖直间距。
+    # 提供 \addlinespace，用于在表格行之间插入竖直间距。
     report_lines.append(r"\usepackage{booktabs}")
 
     report_lines.append("")
-    report_lines.append(r"\title{PB Margin Report}")
-    report_lines.append(r"\author{PB Margin Calculator}")
+    report_lines.append(r"\title{Portfolio Margin Report}")
+    report_lines.append(r"\author{Risk management team}")
     report_lines.append(r"\date{\today}")
     report_lines.append("")
     report_lines.append(r"\begin{document}")
@@ -36,8 +34,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append("")
     report_lines.append(r"\begin{tabular}{l r}")
 
-    # 表格行包含 \\（LaTeX 换行符）：必须用 r 字符串——普通字符串里 \\ 只等于一个反斜杠。
-    # f-string 与 r 可以合并成 rf-string；{值:,.2f} 给数字加千分位逗号并保留两位小数。
+    # 给数字加千分位逗号并保留两位小数。
     report_lines.append(rf"Number of Positions: & {len(positions):,.2f} \\")
     report_lines.append(rf"Long Market Value: & {long_total:,.2f} \\")
     report_lines.append(rf"Short Market Value: & {short_total:,.2f} \\")
@@ -51,6 +48,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\section*{II. Position Structure}")
     report_lines.append("")
     report_lines.append(r"\begin{tabular}{l r}")
+
     # 行业英文名可能含 &，而 & 在 LaTeX 表格里是列分隔符，需要先转义。
     report_lines.append(rf"Largest Sector: & {largest_sector.replace('&', r'\&')} \\")
     report_lines.append(rf"Largest Sector GMV Share: & {sector_share:,.2f} \% \\")
@@ -85,8 +83,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
 
     report_lines.append(r"\subsection*{1. Section A}")
 
-    # 第二轮修订：标签改名；千分位分隔符；内容与注释之间用 \medskip 留空；d) 只报告持有天数大于 0.2 的持仓。
-    # 第三轮修正：每条规则行之后加空行（结束段落），否则 \medskip 会把下一标题并进同一段落；e) 规则行从中分行。
+    # 只报告持有天数大于 0.2 的持仓。
     report_lines.append(r"\textbf{a) Excess GMV charge}")
     report_lines.append("")
     report_lines.append(r"\begin{tabular}{l r}")
@@ -95,7 +92,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\end{tabular}")
     report_lines.append("")
     report_lines.append(r"\bigskip")
-    # 说明句随真实数据变化：GMV 未超 10 亿整体按 12.5%，超出部分按 35%。
+    # 说明随真实数据变化：GMV 未超 10 亿整体按 12.5%，超出部分按 35%。
     if gross_market_value <= 1_000_000_000:
         report_lines.append(r"\noindent\textit{\small GMV less than \$1,000,000,000 -> 12.5\% charge on full GMV}")
     else:
@@ -110,7 +107,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\end{tabular}")
     report_lines.append("")
     report_lines.append(r"\bigskip")
-    # 说明句随真实数据变化：比率在 [0.95, 1.05] 内不计费，区间外按 |NMV| 的 20%。
+    # 说明随真实数据变化：比率在 [0.95, 1.05] 内不计费，区间外按 |NMV| 的 20%。
     if long_short_ratio > 1.05 or long_short_ratio < 0.95:
         report_lines.append(r"\noindent\textit{\small Ratio outside [0.95, 1.05] -> 20\% on |NMV|}")
     else:
@@ -122,12 +119,11 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\textbf{c) Country Additional}")
     report_lines.append("")
 
-    # 新增次级小标题
     report_lines.append(r"\textit{Margin Requirement for sub-portfolio in a single country}")
     report_lines.append("")
 
     report_lines.append(r"\begin{tabular}{l r}")
-    # 每个国家输出三行（净敞口、阈值、要求），国家之间用 \addlinespace 留间距。
+    # 每个国家输出三行（净敞口、阈值、该项下的保证金要求）。
     for country, nmv in country_nmv.items():
         report_lines.append(rf"Portfolio NMV ({country}): & {nmv:,.2f} \\")
         # 用 .get 容错：停用单一国家规则时明细缺失，按 0 输出而不是报错
@@ -143,7 +139,6 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append("")
     report_lines.append(r"\bigskip")
 
-    # 替换原 Single-country 注释为 Aggregate country condition 说明
     report_lines.append(r"\noindent\textit{\small Aggregate country condition: The GMV attributable to Tier 2 countries will receive a 2.5\% requirement; Tier 1 not charged.}")
     report_lines.append("")
     report_lines.append(r"\bigskip")
@@ -151,7 +146,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     # d) Liquidity Additional
     report_lines.append(r"\textbf{d) Liquidity Additional}")
     report_lines.append("")
-    # 收集持有天数超过 0.2 的持仓（股指期货除外，它不是个股）。
+    # 收集持有天数超过 0.2 的持仓（股指期货除外）。
     illiquid_positions = []
     for position in positions:
         if position["is_index_futures"]:
@@ -159,7 +154,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
         if position["days_of_holdings"] > 0.2:
             illiquid_positions.append(position)
 
-    # 没有超过 0.2 的持仓：只输出一句话；否则逐个列出持仓的持有天数与费用。
+    # 没有超过 0.2 的持仓；否则逐个列出持仓的持有天数与费用。
     if len(illiquid_positions) == 0:
         report_lines.append("All securities in the portfolio are less than 0.2 days of holding.")
         report_lines.append("")
@@ -170,7 +165,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
         report_lines.append(r"\begin{tabular}{l r}")
         for position in illiquid_positions:
             report_lines.append(rf"{position['ticker']} Days of Holding: & {position['days_of_holdings']:.9f} \\")
-            # 用 .get 容错：停用流动性规则时持仓里没有 liquidity_charge 字段
+            
             report_lines.append(rf"{position['ticker']} liquidity charge: & {position.get('liquidity_charge', 0):,.2f} \\")
         report_lines.append(r"\addlinespace")
         report_lines.append(rf"Total Margin requirement: & {liquidity_requirement:,.2f} \\")
@@ -185,14 +180,14 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append(r"\textbf{e) Sector Additional}")
     report_lines.append("")
     report_lines.append(r"\begin{tabular}{l r}")
-    # M6 修改：阈值金额由 SectorRule 计算后传入，报告不再自己写死 15%。
+    # 阈值金额由 SectorRule 计算后传入。
     report_lines.append(rf"Sector GMV threshold: & {sector_threshold_amount:,.2f} \\")
     report_lines.append(r"\addlinespace")
-    # 每个行业输出两行（净敞口、要求）；行业名已是英文，直接使用。
+    # 每个行业输出两行（净敞口、要求）。
     for sector, nmv in sector_nmv.items():
         sector_en = sector.replace("&", r"\&")
         report_lines.append(rf"{sector_en} Sector NMV: & {nmv:,.2f} \\")
-        # 用 .get 容错：停用行业规则时明细缺失，按 0 输出而不是报错
+        #  .get 容错：停用行业规则时明细缺失，则按 0 输出
         report_lines.append(rf"{sector_en} Sector Margin: & {sector_requirements.get(sector, 0):,.2f} \\")
     report_lines.append(r"\addlinespace")
     report_lines.append(rf"Total Margin requirement: & {sector_requirement:,.2f} \\")
@@ -217,7 +212,7 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
         if net < 0:
             net_short_count = net_short_count + 1
 
-    # 没有净空头发行人：只输出一句话；否则逐个列出净敞口。
+    # 没有净空头发行人；否则逐个列出净敞口。
     if net_short_count == 0:
         report_lines.append("No net-short issuers")
         report_lines.append("")
@@ -299,7 +294,6 @@ def write_report_tex(positions, long_total, short_total, net_exposure, gross_mar
     report_lines.append("")
     report_lines.append(r"\end{document}")
 
-    # 列表转整篇文本："\n".join 把各行用换行符连起来，再写入文件。
     report_text = "\n".join(report_lines)
     with open("report.tex", "w", encoding="utf-8") as file:
         file.write(report_text)

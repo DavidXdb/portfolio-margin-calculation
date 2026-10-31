@@ -3,8 +3,7 @@ from .base import Rule, RuleResult
 
 class BucketRule(Rule):
     """流动性要求：按持有天数分档，对"超过档位下限天数"的市值部分计收保证金。
-    分档与费率见配置文件 liquidity.buckets。各档独立判断：持有 2.5 天时三档同时计收。
-    成份持仓本步暂不处理。"""
+    分档与费率见配置文件 liquidity.buckets。"""
     def apply(self, context):
         liquidity_requirement = 0
         for position in context.positions:
